@@ -361,7 +361,8 @@ def layout(*, path, title, description, body, current, wa_message=None, schema=N
     preload = preload_html
     if preload_img:
         pn, psizes = preload_img
-        preload = f'<link rel="preload" as="image" imagesrcset="{", ".join(f"{asset(f"assets/img/{pn}-{w_}.webp")} {w_}w" for w_ in _widths(pn))}" imagesizes="{psizes}" fetchpriority="high">\n'
+        srcset = ", ".join(asset("assets/img/%s-%d.webp" % (pn, w_)) + " %dw" % w_ for w_ in _widths(pn))
+        preload = f'<link rel="preload" as="image" imagesrcset="{srcset}" imagesizes="{psizes}" fetchpriority="high">\n'
     ld = ""
     if schema:
         blocks = schema if isinstance(schema, list) else [schema]
@@ -1148,7 +1149,8 @@ def guide_page(g):
     reviewed = g.get("reviewed", GUIDES_PUBLISHED)
     _check_dates(GUIDES_PUBLISHED, reviewed)
     byline = f"By {E(AUTHOR['name'])}" + (f", {E(AUTHOR['role'])}" if AUTHOR.get("role") else "") + f", {E(BRAND)}" if AUTHOR.get("name") else f"By {E(BRAND)}, Guangzhou"
-    author_box = (f'<aside class="guide-author"><p class="guide-author__title">About the author</p><p><strong>{E(AUTHOR["name"])}</strong>{(" — " + E(AUTHOR["role"])) if AUTHOR.get("role") else ""}</p>{("<p>" + E(AUTHOR["experience"]) + "</p>") if AUTHOR.get("experience") else ""}{("<p>" + E(AUTHOR["bio"]) + "</p>") if AUTHOR.get("bio") else ""}{("<p><a href=\"" + E(AUTHOR["url"]) + "\">Profile</a></p>") if AUTHOR.get("url") else ""}{("<p>Reviewed by <strong>" + E(REVIEWER["name"]) + "</strong>" + ((", " + E(REVIEWER["role"])) if REVIEWER.get("role") else "") + "</p>") if REVIEWER.get("name") else ""}</aside>' if AUTHOR.get("name") else "")
+    profile_link = ('<p><a href="' + E(AUTHOR["url"]) + '">Profile</a></p>') if AUTHOR.get("url") else ""
+    author_box = (f'<aside class="guide-author"><p class="guide-author__title">About the author</p><p><strong>{E(AUTHOR["name"])}</strong>{(" — " + E(AUTHOR["role"])) if AUTHOR.get("role") else ""}</p>{("<p>" + E(AUTHOR["experience"]) + "</p>") if AUTHOR.get("experience") else ""}{("<p>" + E(AUTHOR["bio"]) + "</p>") if AUTHOR.get("bio") else ""}{profile_link}{("<p>Reviewed by <strong>" + E(REVIEWER["name"]) + "</strong>" + ((", " + E(REVIEWER["role"])) if REVIEWER.get("role") else "") + "</p>") if REVIEWER.get("name") else ""}</aside>' if AUTHOR.get("name") else "")
     body = f'''
 <article class="guide">
   <header class="guide__head"><div class="container container--narrow">{breadcrumb(crumbs)}<span class="eyebrow">Sourcing guide · {mins} min read</span><h1>{E(g["title"])}</h1><p class="lead">{E(g["description"])}</p><p class="guide__meta">{byline} · Published <time datetime="{GUIDES_PUBLISHED}">{_nice_date(GUIDES_PUBLISHED)}</time> · Last reviewed <time datetime="{reviewed}">{_nice_date(reviewed)}</time></p></div></header>
@@ -1169,7 +1171,8 @@ def guide_page(g):
                "image": SITE_URL + asset(f"assets/img/guides/og/{g['slug']}.jpg"), "author": ({"@type": "Person", "name": AUTHOR["name"], **({"jobTitle": AUTHOR["role"]} if AUTHOR.get("role") else {}), **({"url": AUTHOR["url"]} if AUTHOR.get("url") else {}), "worksFor": {"@id": SITE_URL + "/#org"}} if AUTHOR.get("name") else {"@type": "Organization", "name": BRAND, "url": SITE_URL + "/"}), **({"reviewedBy": {"@type": "Person", "name": REVIEWER["name"], **({"jobTitle": REVIEWER["role"]} if REVIEWER.get("role") else {}), **({"url": REVIEWER["url"]} if REVIEWER.get("url") else {})}} if REVIEWER.get("name") else {}), "publisher": {"@id": SITE_URL + "/#org"}, "isPartOf": {"@id": SITE_URL + "/#website"}, "mainEntityOfPage": SITE_URL + f"/guides/{g['slug']}/"}
     title = g.get("seo_title") or g["title"]
     gws = guide_widths(g["hero"])
-    pre = f'<link rel="preload" as="image" imagesrcset="{", ".join(f"{asset(f"assets/img/guides/{g["hero"]}-{w_}.webp")} {w_}w" for w_ in gws)}" imagesizes="{hero_sizes}" fetchpriority="high">\n'
+    srcset = ", ".join(asset("assets/img/guides/%s-%d.webp" % (g["hero"], w_)) + " %dw" % w_ for w_ in gws)
+    pre = f'<link rel="preload" as="image" imagesrcset="{srcset}" imagesizes="{hero_sizes}" fetchpriority="high">\n'
     return layout(path=f"/guides/{g['slug']}/", current="/guides/", title=title, description=g["description"], body=body, schema=[article, breadcrumb_schema(crumbs)], og_image=f"/assets/img/guides/og/{g['slug']}.jpg", preload_html=pre,
                   wa_message="Hi, I've been reading your sourcing guides and would like some help sourcing from China.")
 

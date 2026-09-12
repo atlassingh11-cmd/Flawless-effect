@@ -115,7 +115,8 @@ for p in sorted(pages):
         wa_links += 1
     # exactly one /guides/ link in the global footer
     foot = re.search(r'<footer class="footer">.*?</footer>', s, re.S)
-    if foot and foot.group(0).count('href="/guides/"') != 1: problems.append(f"{rel}: footer has {foot.group(0).count('href=\"/guides/\"')} /guides/ links")
+    guides_links = foot.group(0).count('href="/guides/"') if foot else 0
+    if foot and guides_links != 1: problems.append(f"{rel}: footer has {guides_links} /guides/ links")
     if foot and re.search(r'href="/guides/[a-z]', foot.group(0)): problems.append(f"{rel}: footer links to an individual guide")
     t = re.search(r"<title>(.*?)</title>", s); d = re.search(r'<meta name="description" content="(.*?)"', s)
     if t: titles.setdefault(html.unescape(t.group(1)), []).append(rel)

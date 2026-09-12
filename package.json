@@ -1,0 +1,22 @@
+{
+  "name": "flawless-effect-site-qa",
+  "private": true,
+  "description": "Browser QA tooling for the Flawless Effect static site (not part of the deployed output).",
+  "type": "module",
+  "scripts": {
+    "build": "python3 -B _build/build.py",
+    "build:audit": "SITE_MODE=production AUDIT_ONLY=1 python3 -B _build/build.py",
+    "test:static": "python3 -B tests/check_dist.py dist && python3 -B tests/check_dist.py dist-audit --production",
+    "qa:browser": "node tests/browser.test.mjs",
+    "qa:lighthouse": "lhci autorun --config=tests/lighthouserc.mobile.json && lhci autorun --config=tests/lighthouserc.desktop.json",
+    "qa": "npm run build && npm run build:audit && npm run test:static && npm run qa:browser && npm run qa:lighthouse"
+  },
+  "devDependencies": {
+    "@lhci/cli": "0.14.0",
+    "axe-core": "4.10.2",
+    "puppeteer": "23.11.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

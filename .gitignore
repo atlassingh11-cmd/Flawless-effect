@@ -1,0 +1,33 @@
+# Build output (Cloudflare Pages builds it from _build/build.py)
+dist/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Local env files — never commit
+.env
+.env.*
+*.pem
+
+# Node / tooling caches (test tooling only)
+node_modules/
+.cache/
+
+# Unused duplicate encodes (excluded from the build; kept locally for reference)
+assets/img/* 2.webp
+
+# Local screenshots and test artefacts
+*.png.tmp
+lighthouse-*.html
+dist-audit/
+
+# Python bytecode
+__pycache__/
+*.pyc
+.lighthouseci/
+tests/artifacts/
+*.log

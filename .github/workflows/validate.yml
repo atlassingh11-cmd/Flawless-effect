@@ -1,0 +1,66 @@
+name: Validate build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Python syntax (no bytecode written)
+        run: python3 -B -m py_compile _build/build.py _build/guides.py tests/check_dist.py
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+      - name: JavaScript syntax
+        run: node --check assets/js/main.js
+      - name: No backend code may be present (static site only)
+        run: |
+          test ! -e functions || { echo "functions/ must not exist: the site has no server-side enquiry system" >&2; exit 1; }
+          ! grep -rEn "fetch\(|XMLHttpRequest|/api/enquiry|resend|turnstile|challenges\.cloudflare" assets/js/main.js _build/build.py || { echo "backend reference found" >&2; exit 1; }
+      - name: Preview build
+        run: python3 -B _build/build.py
+      - name: Static checks on preview build
+        run: python3 -B tests/check_dist.py dist
+      - name: Production-mode audit build (indexable copy, not deployed)
+        run: SITE_MODE=production AUDIT_ONLY=1 python3 -B _build/build.py
+      - name: Static checks on audit build
+        run: python3 -B tests/check_dist.py dist-audit --production
+      - name: Production gate still refuses to build when a legal value is blank
+        run: |
+          python3 -B - <<'PY'
+          import sys; sys.path.insert(0, "_build"); import build
+          build.SITE_MODE = "production"; build.AUDIT_ONLY = False; build.LAUNCH_REQUIRED["PRIVACY_EFFECTIVE_DATE"] = ""
+          try:
+              build.check_launch_gate()
+          except SystemExit as e:
+              print("gate active:", str(e)[:60]); sys.exit(0)
+          print("gate did not block", file=sys.stderr); sys.exit(1)
+          PY
+      - name: Install browser QA tooling (locked)
+        run: npm ci
+      - name: Cache Puppeteer Chrome
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Browser QA (axe-core, responsive, navigation, forms, CSP)
+        run: npm run qa:browser
+      - name: Lighthouse CI (mobile ≥95 / desktop ≥98 performance; 100 accessibility, best practices, SEO)
+        run: npm run qa:lighthouse
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci
+          if-no-files-found: ignore
